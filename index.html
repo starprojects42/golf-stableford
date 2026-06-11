@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#1D9E75">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Golf Stableford">
+<title>Golf Stableford</title>
+<link rel="manifest" href="manifest.json">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f0;color:#1a1a1a;font-size:15px;min-height:100vh}
+.screen{display:none;padding:16px;max-width:420px;margin:0 auto}
+.screen.active{display:block}
+.card{background:#fff;border:0.5px solid #e0e0d8;border-radius:12px;padding:16px;margin-bottom:12px}
+h1{font-size:22px;font-weight:500;margin-bottom:4px}
+h2{font-size:18px;font-weight:500;margin-bottom:12px}
+h3{font-size:16px;font-weight:500}
+.subtitle{color:#888;font-size:13px;margin-bottom:20px}
+button{width:100%;padding:12px;border-radius:8px;border:0.5px solid #ccc;background:#fff;color:#1a1a1a;font-size:15px;cursor:pointer;font-family:inherit;margin-bottom:8px;transition:background 0.15s}
+button:hover{background:#f0f0ea}
+button:active{transform:scale(0.98)}
+.btn-primary{background:#1D9E75;color:#fff;border-color:#1D9E75;font-weight:500}
+.btn-primary:hover{background:#0F6E56;color:#fff}
+.btn-danger{background:#fff0f0;color:#a32d2d;border-color:#f7c1c1}
+.btn-sm{padding:6px 14px;width:auto;font-size:13px;margin-bottom:0;border-radius:8px}
+input,select{width:100%;padding:9px 12px;border:0.5px solid #ccc;border-radius:8px;background:#fff;color:#1a1a1a;font-size:15px;font-family:inherit;margin-bottom:10px}
+label{font-size:13px;color:#666;display:block;margin-bottom:4px}
+.handicap-badge{background:#E1F5EE;color:#0F6E56;border-radius:8px;padding:4px 10px;font-size:13px;font-weight:500}
+.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.metric{background:#f5f5f0;border-radius:8px;padding:12px;text-align:center}
+.metric-val{font-size:24px;font-weight:500}
+.metric-label{font-size:12px;color:#666;margin-top:2px}
+.hole-hdr{display:grid;grid-template-columns:32px 44px 44px 1fr 50px;gap:6px;padding:4px 0;font-size:11px;color:#888;font-weight:500;text-align:center}
+.hole-hdr div:first-child{text-align:left}
+.hole-row{display:grid;grid-template-columns:32px 44px 44px 1fr 50px;gap:6px;align-items:center;padding:8px 0;border-bottom:0.5px solid #e8e8e0;font-size:14px}
+.hole-row:last-child{border-bottom:none}
+.hole-num{font-weight:500;color:#888;font-size:13px}
+.mini-input{width:100%;padding:5px 4px;text-align:center;border:0.5px solid #ccc;border-radius:6px;background:#fff;color:#1a1a1a;font-size:13px}
+.shots-input{width:100%;padding:6px 4px;text-align:center;border:0.5px solid #ccc;border-radius:6px;background:#fff;color:#1a1a1a;font-size:15px;font-weight:500}
+.pts{text-align:center;font-weight:500;font-size:15px;min-width:36px}
+.pts-dash{color:#bbb}
+.pts-0{color:#bbb}
+.pts-1{color:#854F0B}
+.pts-2{color:#1D9E75}
+.pts-3{color:#185FA5}
+.pts-4{color:#7F77DD}
+.pts-5{color:#D85A30}
+.total-bar{background:#E1F5EE;border-radius:8px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+.total-pts{font-size:22px;font-weight:500;color:#0F6E56}
+.upload-area{border:1.5px dashed #ccc;border-radius:12px;padding:28px 16px;text-align:center;cursor:pointer;margin-bottom:12px;transition:background 0.15s}
+.upload-area:hover{background:#f5f5f0}
+.loading-msg{text-align:center;padding:16px;color:#666;font-size:14px}
+.round-item{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:0.5px solid #e8e8e0;font-size:14px}
+.round-item:last-child{border-bottom:none}
+.hint{font-size:12px;color:#999}
+#scan-preview{max-width:100%;border-radius:8px;margin:8px 0;display:none}
+.app-header{background:#1D9E75;color:#fff;padding:14px 16px;position:sticky;top:0;z-index:10}
+.app-header h1{color:#fff;font-size:20px;margin:0}
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div style="max-width:420px;margin:0 auto;display:flex;justify-content:space-between;align-items:center">
+    <h1>⛳ Golf Stableford</h1>
+    <span id="hcp-badge" style="background:rgba(255,255,255,0.25);color:#fff;border-radius:8px;padding:4px 10px;font-size:13px;font-weight:500">HCP 39</span>
+  </div>
+</div>
+
+<!-- HOME -->
+<div id="s-home" class="screen active">
+  <div style="padding-top:16px">
+    <div class="summary-grid">
+      <div class="metric"><div class="metric-val" id="stat-rounds">0</div><div class="metric-label">Rondas jugadas</div></div>
+      <div class="metric"><div class="metric-val" id="stat-best">—</div><div class="metric-label">Mejor resultado</div></div>
+    </div>
+    <button class="btn-primary" onclick="goTo('s-new-round')">＋ Nueva ronda</button>
+    <button onclick="goTo('s-history')">📋 Historial de rondas</button>
+    <button onclick="goTo('s-settings')">⚙️ Ajustes</button>
+  </div>
+</div>
+
+<!-- NUEVA RONDA -->
+<div id="s-new-round" class="screen">
+  <button class="btn-sm" onclick="goTo('s-home')" style="margin-bottom:16px">← Volver</button>
+  <h2>Nueva ronda</h2>
+  <div class="card">
+    <label>Nombre del campo</label>
+    <input type="text" id="course-name" placeholder="Ej: Club de Campo Madrid">
+    <label>Número de hoyos</label>
+    <select id="num-holes">
+      <option value="18">18 hoyos</option>
+      <option value="9">9 hoyos</option>
+    </select>
+    <label>Fecha</label>
+    <input type="date" id="round-date">
+  </div>
+  <div class="card">
+    <h3 style="margin-bottom:8px">📷 Importar tarjeta del recorrido</h3>
+    <p style="font-size:13px;color:#666;margin-bottom:12px">Sube una foto de la tarjeta y la IA leerá el par y handicap de cada hoyo automáticamente.</p>
+    <div class="upload-area" onclick="document.getElementById('scan-file').click()">
+      <div style="font-size:36px;margin-bottom:8px">📷</div>
+      <div style="font-size:14px;color:#666">Toca para subir foto de la tarjeta</div>
+      <div class="hint">JPG o PNG — la IA leerá los datos</div>
+    </div>
+    <input type="file" id="scan-file" accept="image/*" style="display:none" onchange="handleScan(this)">
+    <img id="scan-preview">
+    <div id="scan-status"></div>
+  </div>
+  <button class="btn-primary" onclick="startRound()">Continuar a la ronda →</button>
+</div>
+
+<!-- SCORECARD -->
+<div id="s-scorecard" class="screen">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <div>
+      <h2 id="sc-title" style="margin-bottom:0">Ronda</h2>
+      <span style="font-size:13px;color:#666" id="sc-subtitle"></span>
+    </div>
+    <span class="handicap-badge" id="sc-hcp-badge">HCP 39</span>
+  </div>
+  <div class="card" style="padding:12px">
+    <div class="hole-hdr">
+      <div>Hoyo</div><div>Par</div><div>Hcp</div><div>Golpes</div><div>Pts</div>
+    </div>
+    <div id="holes-list"></div>
+    <div class="total-bar">
+      <span style="font-size:14px;font-weight:500;color:#0F6E56">Total puntos</span>
+      <span class="total-pts" id="total-pts">0</span>
+    </div>
+  </div>
+  <button class="btn-primary" onclick="finishRound()">✓ Finalizar ronda</button>
+  <button class="btn-danger" onclick="goTo('s-home')">Descartar ronda</button>
+</div>
+
+<!-- RESULTADO -->
+<div id="s-result" class="screen">
+  <div style="text-align:center;padding:24px 0 16px">
+    <div style="font-size:52px">🏆</div>
+    <h2 id="res-title" style="font-size:22px;margin-top:8px">Ronda completada</h2>
+    <p id="res-sub" style="color:#666;font-size:14px"></p>
+  </div>
+  <div class="summary-grid">
+    <div class="metric"><div class="metric-val" id="res-pts" style="color:#1D9E75">—</div><div class="metric-label">Puntos Stableford</div></div>
+    <div class="metric"><div class="metric-val" id="res-hcp">—</div><div class="metric-label">Handicap jugado</div></div>
+    <div class="metric"><div class="metric-val" id="res-best-h">—</div><div class="metric-label">Mejor hoyo</div></div>
+    <div class="metric"><div class="metric-val" id="res-strokes">—</div><div class="metric-label">Golpes totales</div></div>
+  </div>
+  <div class="card" id="res-detail" style="font-size:13px"></div>
+  <button class="btn-primary" onclick="goTo('s-home')">🏠 Volver al inicio</button>
+</div>
+
+<!-- HISTORIAL -->
+<div id="s-history" class="screen">
+  <button class="btn-sm" onclick="goTo('s-home')" style="margin-bottom:16px">← Volver</button>
+  <h2>Historial de rondas</h2>
+  <div class="card" id="history-list">
+    <p style="color:#666;font-size:14px;text-align:center;padding:16px">Aún no has jugado ninguna ronda.</p>
+  </div>
+</div>
+
+<!-- AJUSTES -->
+<div id="s-settings" class="screen">
+  <button class="btn-sm" onclick="goTo('s-home')" style="margin-bottom:16px">← Volver</button>
+  <h2>Ajustes</h2>
+  <div class="card">
+    <label>Mi handicap actual</label>
+    <input type="number" id="hcp-input" min="0" max="54" step="0.1" placeholder="Ej: 39">
+    <p class="hint" style="margin-bottom:10px">Se usa para calcular los golpes extra en cada hoyo.</p>
+    <button class="btn-primary" onclick="saveHcp()">Guardar handicap</button>
+  </div>
+  <div class="card">
+    <h3 style="margin-bottom:8px">ℹ️ Sobre la app</h3>
+    <p style="font-size:13px;color:#666;line-height:1.6">Calcula automáticamente los puntos Stableford de cada hoyo según tu handicap y el handicap del hoyo. Puedes importar la tarjeta del campo con una foto.</p>
+  </div>
+</div>
+
+<script>
+let state = { hcp: 39, rounds: [], currentRound: null };
+
+function save() { try { localStorage.setItem('golfapp', JSON.stringify(state)); } catch(e) {} }
+function load() {
+  try { const d = localStorage.getItem('golfapp'); if (d) { const p = JSON.parse(d); state.hcp = p.hcp || 39; state.rounds = p.rounds || []; } } catch(e) {}
+}
+load();
+
+function goTo(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (id === 's-home') refreshHome();
+  if (id === 's-history') refreshHistory();
+  if (id === 's-settings') document.getElementById('hcp-input').value = state.hcp;
+  if (id === 's-new-round') {
+    document.getElementById('round-date').value = new Date().toISOString().split('T')[0];
+    document.getElementById('scan-preview').style.display = 'none';
+    document.getElementById('scan-status').innerHTML = '';
+    document.getElementById('course-name').value = '';
+    scannedData = null;
+  }
+  window.scrollTo(0, 0);
+}
+
+function refreshHome() {
+  document.getElementById('hcp-badge').textContent = 'HCP ' + state.hcp;
+  document.getElementById('stat-rounds').textContent = state.rounds.length;
+  document.getElementById('stat-best').textContent = state.rounds.length > 0 ? Math.max(...state.rounds.map(r => r.total)) + ' pts' : '—';
+}
+
+function saveHcp() {
+  const v = parseFloat(document.getElementById('hcp-input').value);
+  if (isNaN(v) || v < 0 || v > 54) { alert('Introduce un handicap válido entre 0 y 54.'); return; }
+  state.hcp = v; save();
+  document.getElementById('hcp-badge').textContent = 'HCP ' + v;
+  alert('Handicap actualizado a ' + v + ' ✓');
+}
+
+function getExtraShots(hcp, holeHcp, totalHoles) {
+  const base = Math.floor(hcp / totalHoles);
+  const extra = Math.round(hcp % totalHoles);
+  return base + (holeHcp <= extra ? 1 : 0);
+}
+
+function calcPoints(shots, par, hcp, holeHcp, totalHoles) {
+  if (!shots || shots <= 0) return null;
+  const extras = getExtraShots(hcp, holeHcp, totalHoles);
+  const net = shots - extras;
+  const diff = par - net;
+  if (diff <= -2) return 0;
+  if (diff === -1) return 1;
+  if (diff === 0) return 2;
+  if (diff === 1) return 3;
+  if (diff === 2) return 4;
+  if (diff >= 3) return 5;
+  return 0;
+}
+
+let scannedData = null;
+
+async function handleScan(input) {
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const preview = document.getElementById('scan-preview');
+    const status = document.getElementById('scan-status');
+    preview.src = e.target.result;
+    preview.style.display = 'block';
+    status.innerHTML = '<div class="loading-msg">⏳ Analizando tarjeta con IA...</div>';
+    const b64 = e.target.result.split(',')[1];
+    const mime = file.type || 'image/jpeg';
+    const holes = parseInt(document.getElementById('num-holes').value) || 18;
+    try {
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{ role: 'user', content: [
+            { type: 'image', source: { type: 'base64', media_type: mime, data: b64 } },
+            { type: 'text', text: 'Esta es una tarjeta de puntuación de golf. Extrae para cada hoyo: número de hoyo, par y handicap de hoyo (hcp). Devuelve SOLO un array JSON sin texto adicional ni markdown, con formato: [{"hole":1,"par":4,"hcp":7}, ...]. Si no puedes leer algún valor usa null. Extrae exactamente ' + holes + ' hoyos.' }
+          ]}]
+        })
+      });
+      const data = await resp.json();
+      const text = data.content.map(b => b.text || '').join('');
+      scannedData = JSON.parse(text.replace(/```json|```/g, '').trim());
+      const ok = scannedData.filter(h => h.par && h.hcp).length;
+      status.innerHTML = '<div style="color:#1D9E75;font-size:13px;padding:8px 0">✓ Detectados ' + ok + ' hoyos con par y handicap.</div>';
+    } catch(err) {
+      status.innerHTML = '<div style="color:#a32d2d;font-size:13px;padding:8px 0">⚠️ No se pudo leer la tarjeta. Puedes editar los datos manualmente.</div>';
+      scannedData = null;
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function startRound() {
+  const name = document.getElementById('course-name').value || 'Campo sin nombre';
+  const holes = parseInt(document.getElementById('num-holes').value) || 18;
+  const date = document.getElementById('round-date').value || new Date().toISOString().split('T')[0];
+  const holeData = [];
+  for (let i = 1; i <= holes; i++) {
+    const sc = scannedData && scannedData.find(h => h.hole === i);
+    holeData.push({ hole: i, par: sc && sc.par ? sc.par : 4, hcp: sc && sc.hcp ? sc.hcp : i, shots: null });
+  }
+  state.currentRound = { name, holes, date, holeData, hcp: state.hcp };
+  scannedData = null;
+  renderScorecard();
+  goTo('s-scorecard');
+}
+
+function renderScorecard() {
+  const r = state.currentRound;
+  document.getElementById('sc-title').textContent = r.name;
+  document.getElementById('sc-subtitle').textContent = r.date + ' · ' + r.holes + ' hoyos';
+  document.getElementById('sc-hcp-badge').textContent = 'HCP ' + r.hcp;
+  const list = document.getElementById('holes-list');
+  list.innerHTML = '';
+  r.holeData.forEach((h, i) => {
+    const row = document.createElement('div');
+    row.className = 'hole-row';
+    row.innerHTML =
+      '<div class="hole-num">' + h.hole + '</div>' +
+      '<div><input class="mini-input" type="number" min="3" max="6" value="' + h.par + '" onchange="updatePar(' + i + ',this.value)"></div>' +
+      '<div><input class="mini-input" type="number" min="1" max="18" value="' + h.hcp + '" onchange="updateHoleHcp(' + i + ',this.value)"></div>' +
+      '<div><input class="shots-input" type="number" min="1" max="20" placeholder="—" onchange="updateShots(' + i + ',this.value)"></div>' +
+      '<div class="pts pts-dash" id="pts-' + i + '">—</div>';
+    list.appendChild(row);
+  });
+  updateTotal();
+}
+
+function updatePar(i, v) { state.currentRound.holeData[i].par = parseInt(v) || 4; recalcRow(i); }
+function updateHoleHcp(i, v) { state.currentRound.holeData[i].hcp = parseInt(v) || (i+1); recalcRow(i); }
+function updateShots(i, v) { const val = parseInt(v); state.currentRound.holeData[i].shots = val > 0 ? val : null; recalcRow(i); }
+
+function recalcRow(i) {
+  const h = state.currentRound.holeData[i];
+  const r = state.currentRound;
+  const pts = calcPoints(h.shots, h.par, r.hcp, h.hcp, r.holes);
+  const el = document.getElementById('pts-' + i);
+  if (el) {
+    el.textContent = pts === null ? '—' : pts;
+    el.className = 'pts ' + (pts === null ? 'pts-dash' : pts <= 0 ? 'pts-0' : pts === 1 ? 'pts-1' : pts === 2 ? 'pts-2' : pts === 3 ? 'pts-3' : pts === 4 ? 'pts-4' : 'pts-5');
+  }
+  updateTotal();
+}
+
+function updateTotal() {
+  const r = state.currentRound;
+  document.getElementById('total-pts').textContent = r.holeData.reduce((sum, h) => sum + (calcPoints(h.shots, h.par, r.hcp, h.hcp, r.holes) || 0), 0);
+}
+
+function finishRound() {
+  const r = state.currentRound;
+  const played = r.holeData.filter(h => h.shots && h.shots > 0);
+  if (played.length === 0) { alert('Introduce al menos un golpe antes de finalizar.'); return; }
+  const total = r.holeData.reduce((sum, h) => sum + (calcPoints(h.shots, h.par, r.hcp, h.hcp, r.holes) || 0), 0);
+  const totalShots = r.holeData.reduce((s, h) => s + (h.shots || 0), 0);
+  let best = { hole: '-', pts: -1 };
+  r.holeData.forEach(h => { const p = calcPoints(h.shots, h.par, r.hcp, h.hcp, r.holes) || 0; if (p > best.pts) best = { hole: h.hole, pts: p }; });
+  r.total = total; r.totalShots = totalShots; r.bestHole = best.hole; r.bestPts = best.pts;
+  state.rounds.unshift(r); state.currentRound = null; save();
+  document.getElementById('res-pts').textContent = total;
+  document.getElementById('res-hcp').textContent = r.hcp;
+  document.getElementById('res-best-h').textContent = 'H' + best.hole + ' (' + best.pts + 'pts)';
+  document.getElementById('res-strokes').textContent = totalShots;
+  document.getElementById('res-title').textContent = r.name;
+  document.getElementById('res-sub').textContent = r.date + ' · ' + played.length + ' hoyos jugados';
+  document.getElementById('res-detail').innerHTML = r.holeData.filter(h => h.shots).map(h => {
+    const p = calcPoints(h.shots, h.par, r.hcp, h.hcp, r.holes);
+    const extras = getExtraShots(r.hcp, h.hcp, r.holes);
+    return '<div class="round-item"><span>Hoyo ' + h.hole + ' — Par ' + h.par + ', Hcp ' + h.hcp + '</span><span style="text-align:right">' + h.shots + ' golpes → <strong>' + p + ' pts</strong><br><span class="hint">+' + extras + ' extra(s)</span></span></div>';
+  }).join('');
+  goTo('s-result');
+}
+
+function refreshHistory() {
+  const list = document.getElementById('history-list');
+  if (state.rounds.length === 0) { list.innerHTML = '<p style="color:#666;font-size:14px;text-align:center;padding:16px">Aún no has jugado ninguna ronda.</p>'; return; }
+  list.innerHTML = state.rounds.map(r =>
+    '<div class="round-item"><div><div style="font-weight:500">' + r.name + '</div><div class="hint">' + r.date + ' · HCP ' + r.hcp + ' · ' + r.holes + ' hoyos</div></div>' +
+    '<div style="text-align:right"><div style="font-size:18px;font-weight:500;color:#1D9E75">' + r.total + ' pts</div><div class="hint">' + (r.totalShots || '—') + ' golpes</div></div></div>'
+  ).join('');
+}
+
+refreshHome();
+</script>
+</body>
+</html>
