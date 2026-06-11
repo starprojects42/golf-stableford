@@ -1,1 +1,18 @@
-
+{
+  "name": "Golf Stableford",
+  "short_name": "Golf",
+  "description": "App de puntuación Stableford para golf",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5f5f0",
+  "theme_color": "#1D9E75",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
